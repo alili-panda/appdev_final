@@ -13,32 +13,58 @@ class myCasesController extends Controller
 {
      public function index(Request $request)
     {
-
-          $cases = DB::table('vawc_intakes as i')
+        $cases = DB::table('vawc_intakes as i')
             ->leftJoin('vawc_victim_survivors as v', 'v.vawc_intake_id', '=', 'i.id')
             ->where('i.created_by', $request->user()->id)
             ->select('i.id', 'i.case_number', 'i.referred_admitted_date', 'v.given_name', 'v.last_name')
             ->orderByDesc('i.id')->paginate(10);
 
-
-
         return view('social-worker.cases.index', compact('cases'));
     }
 
-
-     public function create()
+    public function create()
     {
         return view('social-worker.cases.create');
     }
 
+    private function ownedCase(Request $request, int $case)
+    {
+        return DB::table('vawc_intakes')->where('id', $case)
+            ->where('created_by', $request->user()->id)->firstOrFail();
+    }
+
+    public function edit(Request $request, int $case)
+    {
+        $intake = $this->ownedCase($request, $case);
+        $caseValues = (array) $intake;
+        $caseValues['victim'] = (array) DB::table('vawc_victim_survivors')->where('vawc_intake_id', $case)->first();
+        $caseValues['perpetrator'] = (array) DB::table('vawc_perpetrators')->where('vawc_intake_id', $case)->first();
+        $caseValues['family'] = [];
+        foreach (DB::table('vawc_family_members')->where('vawc_intake_id', $case)->orderBy('position')->get() as $member) {
+            $caseValues['family'][$member->position - 1] = (array) $member;
+        }
+        return view('social-worker.cases.create', compact('caseValues', 'intake'));
+    }
+
+    public function update(Request $request, int $case)
+    {
+        $this->ownedCase($request, $case);
+        return $this->persist($request, $case);
+    }
+
     public function store(Request $request)
+    {
+        return $this->persist($request);
+    }
+
+    private function persist(Request $request, ?int $case = null)
     {
         $rules = ['family' => ['nullable', 'array', 'max:10'], 'family.*' => ['array']];
         $fields = collect(config('vawc.sections'))->flatten(1)->all();
         foreach ($fields as $field) {
             $rules[$field['name']] = $this->fieldRules($field);
         }
-        $rules['case_number'][] = Rule::unique('vawc_intakes', 'case_number');
+        $rules['case_number'][] = Rule::unique('vawc_intakes', 'case_number')->ignore($case);
         foreach (config('vawc.family_fields') as $field) {
             $rules['family.*.' . $field['name']] = $this->fieldRules($field);
         }
@@ -63,7 +89,13 @@ class myCasesController extends Controller
                     $data[$field['name']] = $path;
                 }
             }
-            DB::transaction(function () use ($data, $fields, $request) {
+            // An empty upload preserves the existing signature on edit.
+            foreach ($fields as $field) {
+                if ($field['type'] === 'file' && !$request->hasFile($field['name'])) {
+                    unset($data[$field['name']]);
+                }
+            }
+            DB::transaction(function () use ($data, $fields, $request, $case) {
                 $now = now();
                 $intakeKeys = collect($fields)->pluck('name')->filter(fn ($name) => !str_contains($name, '.'))->all();
                 $intake = Arr::only($data, $intakeKeys);
@@ -72,16 +104,32 @@ class myCasesController extends Controller
                         $intake[$field['name']] = (bool) ($data[$field['name']] ?? false);
                     }
                 }
-                $id = DB::table('vawc_intakes')->insertGetId(array_merge($intake, [
-                    'created_by' => $request->user()->id, 'created_at' => $now, 'updated_at' => $now,
-                ]));
+                if ($case !== null) {
+                    $existing = DB::table('vawc_intakes')->where('id', $case)
+                        ->where('created_by', $request->user()->id)->lockForUpdate()->firstOrFail();
+                    $id = $existing->id;
+                    DB::table('vawc_intakes')->where('id', $id)->update(array_merge($intake, ['updated_at' => $now]));
+                } else {
+                    $id = DB::table('vawc_intakes')->insertGetId(array_merge($intake, [
+                        'created_by' => $request->user()->id, 'created_at' => $now, 'updated_at' => $now,
+                    ]));
+                }
                 foreach (['victim' => 'vawc_victim_survivors', 'perpetrator' => 'vawc_perpetrators'] as $group => $table) {
                     $keys = collect($fields)->pluck('name')->filter(fn ($name) => str_starts_with($name, "$group."))
                         ->map(fn ($name) => substr($name, strlen($group) + 1))->all();
                     $record = Arr::only($data[$group] ?? [], $keys);
-                    if ($group === 'perpetrator' && !collect($record)->contains(fn ($value) => $value !== null && $value !== '')) { continue; }
-                    DB::table($table)->insert(array_merge($record, ['vawc_intake_id' => $id, 'created_at' => $now, 'updated_at' => $now]));
+                    if ($group === 'perpetrator' && !collect($record)->contains(fn ($value) => $value !== null && $value !== '')) {
+                        DB::table($table)->where('vawc_intake_id', $id)->delete();
+                        continue;
+                    }
+                    $existingChild = DB::table($table)->where('vawc_intake_id', $id)->first();
+                    if ($existingChild) {
+                        DB::table($table)->where('id', $existingChild->id)->update(array_merge($record, ['updated_at' => $now]));
+                    } else {
+                        DB::table($table)->insert(array_merge($record, ['vawc_intake_id' => $id, 'created_at' => $now, 'updated_at' => $now]));
+                    }
                 }
+                DB::table('vawc_family_members')->where('vawc_intake_id', $id)->delete();
                 foreach ($data['family'] ?? [] as $index => $member) {
                     $member = Arr::only($member, array_column(config('vawc.family_fields'), 'name'));
                     if (!collect($member)->contains(fn ($value) => $value !== null && $value !== '')) { continue; }
@@ -94,7 +142,7 @@ class myCasesController extends Controller
             Storage::disk('local')->delete($paths);
             throw $exception;
         }
-        return redirect()->route('social-worker.cases.index')->with('success', 'Case created successfully.');
+        return redirect()->route('social-worker.cases.index')->with('success', $case !== null ? 'Case updated successfully.' : 'Case created successfully.');
     }
 
     private function fieldRules(array $field): array

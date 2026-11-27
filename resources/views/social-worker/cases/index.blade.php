@@ -80,10 +80,10 @@
 
                     @if(session('success'))<p class="p-4 text-green-800" role="status">{{ session('success') }}</p>@endif
                     <div class="overflow-x-auto"><table class="w-full text-sm text-left">
-                      <thead><tr><th class="p-4">Case number</th><th class="p-4">Client</th><th class="p-4">Date admitted</th></tr></thead>
+                      <thead><tr><th class="p-4">Case number</th><th class="p-4">Client</th><th class="p-4">Date admitted</th><th class="p-4">Actions</th></tr></thead>
                       <tbody>@forelse($cases as $case)
-                        <tr class="border-t"><td class="p-4">{{ $case->case_number }}</td><td class="p-4">{{ $case->given_name }} {{ $case->last_name }}</td><td class="p-4">{{ $case->referred_admitted_date ?? '—' }}</td></tr>
-                      @empty<tr><td colspan="3" class="p-10 text-center text-slate-500">No cases yet. Select Add Case to create one.</td></tr>@endforelse</tbody>
+                        <tr class="border-t"><td class="p-4">{{ $case->case_number }}</td><td class="p-4">{{ $case->given_name }} {{ $case->last_name }}</td><td class="p-4">{{ $case->referred_admitted_date ?? '—' }}</td><td class="p-4"><a href="{{ route('social-worker.cases.edit', $case->id) }}" class="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg">Edit</a></td></tr>
+                      @empty<tr><td colspan="4" class="p-10 text-center text-slate-500">No cases yet. Select Add Case to create one.</td></tr>@endforelse</tbody>
                     </table></div><div class="p-4">{{ $cases->links() }}</div>
 
                 </div>

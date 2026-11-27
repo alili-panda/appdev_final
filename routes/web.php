@@ -70,6 +70,8 @@ Route::get('/social-worker/myCases', [myCasesController::class, 'index'])
 
 Route::get('/create', [myCasesController::class, 'create'])->name('social-worker.cases.create');
 Route::post('/', [myCasesController::class, 'store'])->name('social-worker.cases.store');
+Route::get('/{case}/edit', [myCasesController::class, 'edit'])->whereNumber('case')->name('social-worker.cases.edit');
+Route::put('/{case}', [myCasesController::class, 'update'])->whereNumber('case')->name('social-worker.cases.update');
 
 Route::get('/social-worker/referralManagement', [referralManagementController::class, 'index'])
 ->name('social-worker.referralManagement');

@@ -3,13 +3,13 @@
     $inputName = preg_replace('/\.([^\.]+)/', '[$1]', $key);
     $inputId = 'case-' . str_replace('.', '-', $key);
     $type = $field['type'];
-    $value = old($key, $key === 'handling_social_worker_name' ? auth()->user()->name : '');
+    $value = old($key, data_get($caseValues ?? [], $key, $key === 'handling_social_worker_name' ? auth()->user()->name : ''));
     $classes = 'w-full border border-slate-300 rounded-lg px-3 py-2 mt-1';
 @endphp
 <div class="{{ $type === 'textarea' ? 'md:col-span-2' : '' }}">
     @if($type === 'checkbox')
         <input type="hidden" name="{{ $inputName }}" value="0">
-        <label for="{{ $inputId }}" class="flex gap-3 items-center text-sm"><input id="{{ $inputId }}" type="checkbox" name="{{ $inputName }}" value="1" @checked(old($key))>{{ $field['label'] }}</label>
+        <label for="{{ $inputId }}" class="flex gap-3 items-center text-sm"><input id="{{ $inputId }}" type="checkbox" name="{{ $inputName }}" value="1" @checked((bool) $value)>{{ $field['label'] }}</label>
     @else
         <label for="{{ $inputId }}" class="block text-sm font-medium text-slate-700">{{ $field['label'] }} @if($field['required'])<span aria-hidden="true">*</span>@endif</label>
         @if($type === 'textarea')
@@ -23,7 +23,7 @@
                 @endforeach
             </select>
         @elseif($type === 'file')
-            <input id="{{ $inputId }}" name="{{ $inputName }}" type="file" accept="image/jpeg,image/png" class="{{ $classes }}"><p class="text-xs text-slate-500 mt-1">Optional JPG or PNG, maximum 2 MB. Stored privately.</p>
+            <input id="{{ $inputId }}" name="{{ $inputName }}" type="file" accept="image/jpeg,image/png" class="{{ $classes }}"><p class="text-xs text-slate-500 mt-1">Optional JPG or PNG, maximum 2 MB. Stored privately. @if(data_get($caseValues ?? [], $key)) A signature is already saved. Leave empty to keep it. @endif</p>
         @else
             <input id="{{ $inputId }}" name="{{ $inputName }}" type="{{ in_array($type, ['age', 'money']) ? 'number' : ($type === 'short' ? 'text' : $type) }}" value="{{ $value }}" class="{{ $classes }}" @required($field['required'])
                 @if($type === 'age') min="0" max="130" step="1"
