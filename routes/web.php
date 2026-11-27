@@ -67,8 +67,6 @@ Route::get('/admin/activityLogs', [activityLogsController::class, 'index'])
 
 
 
-
-
 Route::get('/social-worker/myCases', [myCasesController::class, 'index'])
 ->name('social-worker.cases.index');
 
