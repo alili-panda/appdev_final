@@ -7,6 +7,7 @@
     
 @include('partials.navAdmin')
 
+
     {{-- MAIN CONTENT --}}
     <main class="flex-1 min-w-0 p-6 lg:p-8">
 

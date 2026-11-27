@@ -371,9 +371,9 @@
                                                                         <option value="worker" @selected($user->role === 'worker')>
                                                                             MSWDO Worker
                                                                         </option>
-                                                                        <option value="client" @selected($user->role === 'client')>
+                                                                        <!-- <option value="client" @selected($user->role === 'client')>
                                                                             Client User
-                                                                        </option>
+                                                                        </option> -->
                                                                     </select>
                                                                 </div>
 

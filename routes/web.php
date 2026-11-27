@@ -15,13 +15,12 @@ use App\Http\Controllers\socialWorker\referralManagementController;
 use App\Http\Controllers\socialWorker\reportManagementController;
 use App\Http\Controllers\socialWorker\myProfileController;
 use App\Http\Controllers\client\clientDashboardController;
-use App\Http\Controllers\client\caseStatusController;
+use App\Http\Controllers\client\caseStatusController;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
 use App\Http\Controllers\client\uploadFileController;
 
 Route::get('/', function () {
     return view('welcome');
 });
-
 Route::get('/login', function () {
     return view('login');
 })->name('login');
@@ -29,11 +28,10 @@ Route::get('/login', function () {
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::post('/logout', [AuthController::class, 'logout']);
-
-
 Route::get('/social-worker/dashboard', function () {
     return view('social-worker.dashboard');
 });
+
 
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
     ->name('admin.dashboard');
@@ -81,6 +79,9 @@ Route::get('/social-worker/reportManagement', [reportManagementController::class
 
 Route::get('/social-worker/myProfile', [myProfileController::class, 'index'])
 ->name('social-worker.myProfile');
+
+
+
 
 Route::get('/client/dashboard', [clientDashboardController::class, 'index'])
 ->name('client.dashboard');
