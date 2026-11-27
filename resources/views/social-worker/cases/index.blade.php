@@ -23,6 +23,7 @@
 
             <div class="flex items-center gap-4">
 
+                <a href="{{ route('social-worker.cases.create') }}" class="px-4 py-2 rounded-lg bg-blue-700 text-white font-semibold">+ Add Case</a>
                 <div class="text-right">
                     <p class="font-semibold text-sm text-slate-800">
                         {{ auth()->user()->name }}
@@ -77,15 +78,13 @@
                         </a>
                     </div>
 
-                    <div class="p-10 text-center">
-                        <p class="text-4xl text-slate-300 mb-3">▤</p>
-                        <p class="font-semibold text-slate-600">
-                            No assigned cases yet
-                        </p>
-                        <p class="text-sm text-slate-400 mt-1">
-                            Cases assigned by the administrator will appear here.
-                        </p>
-                    </div>
+                    @if(session('success'))<p class="p-4 text-green-800" role="status">{{ session('success') }}</p>@endif
+                    <div class="overflow-x-auto"><table class="w-full text-sm text-left">
+                      <thead><tr><th class="p-4">Case number</th><th class="p-4">Client</th><th class="p-4">Date admitted</th></tr></thead>
+                      <tbody>@forelse($cases as $case)
+                        <tr class="border-t"><td class="p-4">{{ $case->case_number }}</td><td class="p-4">{{ $case->given_name }} {{ $case->last_name }}</td><td class="p-4">{{ $case->referred_admitted_date ?? '—' }}</td></tr>
+                      @empty<tr><td colspan="3" class="p-10 text-center text-slate-500">No cases yet. Select Add Case to create one.</td></tr>@endforelse</tbody>
+                    </table></div><div class="p-4">{{ $cases->links() }}</div>
 
                 </div>
 

@@ -41,6 +41,14 @@ Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
 Route::get('/admin/userManagement', [userManagementController::class, 'index'])
     ->name('admin.userManagement');
 
+Route::post('/users', [userManagementController::class, 'store'])->name('users.store');
+
+Route::put('/users/{user}', [userManagementController::class, 'update'])->name('users.update');
+
+Route::delete('/users/{user}', [userManagementController::class, 'destroy'])->name('users.destroy');
+
+
+
 Route::get('/admin/caseMonitoring', [caseMonitoringController::class, 'index'])
 ->name('admin.caseMonitoring');
 
@@ -56,8 +64,16 @@ Route::get('/admin/reports', [reportsController::class, 'index'])
 Route::get('/admin/activityLogs', [activityLogsController::class, 'index'])
 ->name('admin.activityLogs');
 
+
+
+
+
+
 Route::get('/social-worker/myCases', [myCasesController::class, 'index'])
-->name('social-worker.myCases');
+->name('social-worker.cases.index');
+
+Route::get('/create', [myCasesController::class, 'create'])->name('social-worker.cases.create');
+Route::post('/', [myCasesController::class, 'store'])->name('social-worker.cases.store');
 
 Route::get('/social-worker/referralManagement', [referralManagementController::class, 'index'])
 ->name('social-worker.referralManagement');
